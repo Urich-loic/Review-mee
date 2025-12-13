@@ -1,0 +1,61 @@
+{% comment %}
+  Bloc compact pour afficher le résumé des notes
+  À placer près du titre du produit
+{% endcomment %}
+
+{% schema %}
+{
+  "name": "Résumé des Notes",
+  "target": "section",
+  "stylesheet": "rating-summary.css",
+  "javascript": "rating-summary.js",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "show_histogram",
+      "label": "Afficher l'histogramme",
+      "default": false
+    },
+    {
+      "type": "select",
+      "id": "size",
+      "label": "Taille",
+      "options": [
+        {
+          "value": "small",
+          "label": "Petit"
+        },
+        {
+          "value": "medium",
+          "label": "Moyen"
+        },
+        {
+          "value": "large",
+          "label": "Grand"
+        }
+      ],
+      "default": "medium"
+    },
+    {
+      "type": "checkbox",
+      "id": "link_to_reviews",
+      "label": "Lien vers les avis",
+      "default": true
+    }
+  ],
+  
+}
+{% endschema %}
+
+<div
+  id="rating-summary-{{ section.id }}"
+  class="rating-summary-widget rating-summary-{{ section.settings.size }}"
+  data-product-id="{{ product.id }}"
+  data-show-histogram="{{ section.settings.show_histogram }}"
+  data-link-to-reviews="{{ section.settings.link_to_reviews }}"
+  data-shop="{{ shop.permanent_domain }}"
+>
+  <div class="rating-summary-loading">
+    <span class="loading-text">Chargement...</span>
+  </div>
+</div>

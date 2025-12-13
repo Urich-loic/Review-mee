@@ -1,0 +1,25 @@
+{
+  "dashboard": {
+    "title": "Panel",
+    "totalReviews": "Total de reseñas",
+    "avgRating": "Calificación promedio"
+  },
+  "reviews": {
+    "title": "Reseñas",
+    "pending": "Pendiente",
+    "published": "Publicado",
+    "approve": "Aprobar",
+    "delete": "Eliminar"
+  },
+  "settings": {
+    "title": "Configuración",
+    "save": "Guardar",
+    "autoPublish": "Publicar reseñas automáticamente",
+    "emailEnabled": "Enviar correos de solicitud de reseña"
+  },
+  "widget": {
+    "writeReview": "Escribir una reseña",
+    "reviews": "reseñas",
+    "verified": "Compra verificada"
+  }
+}

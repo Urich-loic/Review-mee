@@ -1,0 +1,25 @@
+{
+  "dashboard": {
+    "title": "Tableau de bord",
+    "totalReviews": "Total des avis",
+    "avgRating": "Note moyenne"
+  },
+  "reviews": {
+    "title": "Avis",
+    "pending": "En attente",
+    "published": "Publié",
+    "approve": "Approuver",
+    "delete": "Supprimer"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "save": "Enregistrer",
+    "autoPublish": "Publier automatiquement les avis",
+    "emailEnabled": "Envoyer des e-mails de demande d'avis"
+  },
+  "widget": {
+    "writeReview": "Écrire un avis",
+    "reviews": "avis",
+    "verified": "Achat vérifié"
+  }
+}

@@ -1,0 +1,7 @@
+export function renderWriteButton() {
+  return `
+    <div class="write-review-container">
+      <button class="write-review-btn" data-action="write-review">✍️ Écrire un Avis</button>
+    </div>
+  `;
+}

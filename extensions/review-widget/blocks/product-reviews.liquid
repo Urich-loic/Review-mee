@@ -1,0 +1,133 @@
+{% comment %}
+  Bloc principal pour afficher tous les avis
+{% endcomment %}
+
+{% schema %}
+{
+  "name": "Avis Produits",
+  "target": "section",
+  "stylesheet": "product-reviews.css",
+  "javascript": "product-reviews.js",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Paramètres d'affichage"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Style d'affichage",
+      "options": [
+        {
+          "value": "list",
+          "label": "Liste"
+        },
+        {
+          "value": "grid",
+          "label": "Grille"
+        },
+        {
+          "value": "masonry",
+          "label": "Maçonnerie"
+        }
+      ],
+      "default": "list"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_photos",
+      "label": "Afficher les photos",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "show_verified_badge",
+      "label": "Afficher le badge 'Achat vérifié'",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "reviews_per_page",
+      "label": "Avis par page",
+      "min": 5,
+      "max": 50,
+      "step": 5,
+      "default": 10
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_sorting",
+      "label": "Activer le tri",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_filtering",
+      "label": "Activer les filtres par étoiles",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Personnalisation des couleurs"
+    },
+    {
+      "type": "color",
+      "id": "star_color",
+      "label": "Couleur des étoiles",
+      "default": "#FFD700"
+    },
+    {
+      "type": "color",
+      "id": "button_bg_color",
+      "label": "Couleur du bouton",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Couleur du texte du bouton",
+      "default": "#FFFFFF"
+    }
+  ],
+ 
+}
+{% endschema %}
+
+<div
+  id="review-widget-{{ section.id }}"
+  class="review-widget-container"
+  data-product-id="{{ product.id }}"
+  data-product-handle="{{ product.handle }}"
+  data-layout="{{ section.settings.layout }}"
+  data-show-photos="{{ section.settings.show_photos }}"
+  data-show-verified="{{ section.settings.show_verified_badge }}"
+  data-reviews-per-page="{{ section.settings.reviews_per_page }}"
+  data-enable-sorting="{{ section.settings.enable_sorting }}"
+  data-enable-filtering="{{ section.settings.enable_filtering }}"
+  data-star-color="{{ section.settings.star_color }}"
+  data-button-bg="{{ section.settings.button_bg_color }}"
+  data-button-text="{{ section.settings.button_text_color }}"
+  data-shop="{{ shop.permanent_domain }}"
+  data-locale="{{ request.locale.iso_code }}"
+>
+  <div class="review-widget-loading">
+    <div class="spinner"></div>
+    <p>{{ 'loading' }}</p>
+  </div>
+</div>
+
+{% style %}
+  #review-widget-{{ section.id }} .stars {
+    color: {{ section.settings.star_color }};
+  }
+
+  #review-widget-{{ section.id }} .write-review-btn {
+    background-color: {{ section.settings.button_bg_color }};
+    color: {{ section.settings.button_text_color }};
+  }
+
+  #review-widget-{{ section.id }} .filter-btn.active {
+    background-color: {{ section.settings.button_bg_color }};
+    color: {{ section.settings.button_text_color }};
+  }
+{% endstyle %}

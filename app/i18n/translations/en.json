@@ -1,0 +1,25 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "totalReviews": "Total Reviews",
+    "avgRating": "Average Rating"
+  },
+  "reviews": {
+    "title": "Reviews",
+    "pending": "Pending",
+    "published": "Published",
+    "approve": "Approve",
+    "delete": "Delete"
+  },
+  "settings": {
+    "title": "Settings",
+    "save": "Save",
+    "autoPublish": "Auto-publish reviews",
+    "emailEnabled": "Send review request emails"
+  },
+  "widget": {
+    "writeReview": "Write a Review",
+    "reviews": "reviews",
+    "verified": "Verified Purchase"
+  }
+}

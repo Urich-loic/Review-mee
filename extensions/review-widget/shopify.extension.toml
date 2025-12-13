@@ -1,0 +1,26 @@
+name = "review-widget"
+type = "theme"
+uid = "35b372b8-e5d7-81eb-c3d7-dea12634b8c97c864dfc"
+# Extensions API version
+api_version = "2024-10"
+
+
+[[extensions]]
+type = "theme"
+name = "Product Reviews Widget"
+handle = "product-reviews-widget"
+
+# Description de l'extension
+[extensions.settings]
+
+[[extensions.blocks]]
+type = "app"
+name = "product-reviews"
+
+[[extensions.blocks]]
+type = "app"
+name = "rating-summary"
+
+[[extensions.blocks]]
+type = "app"
+name = "star-badge"

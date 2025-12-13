@@ -32,3 +32,52 @@ model Session {
   refreshToken        String?
   refreshTokenExpires DateTime?
 }
+
+model Review {
+  id          String   @id @default(cuid())
+  shop        String
+  productId   String
+  variantId   String?
+  customerId  String?
+  customerName String
+  customerEmail String
+  rating      Int
+  title       String?
+  content     String
+  images      String?  // JSON array of image URLs
+  verified    Boolean  @default(false)
+  published   Boolean  @default(false)
+  helpful     Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([shop, productId])
+  @@index([shop, published])
+}
+
+model ReviewRequest {
+  id          String   @id @default(cuid())
+  shop        String
+  orderId     String
+  customerEmail String
+  productIds  String   // JSON array
+  sentAt      DateTime?
+  status      String   // pending, sent, completed
+  token       String   @unique
+  createdAt   DateTime @default(now())
+
+  @@index([shop, status])
+}
+
+model Settings {
+  id                    String  @id @default(cuid())
+  shop                  String  @unique
+  autoPublish           Boolean @default(false)
+  emailEnabled          Boolean @default(true)
+  emailDelay            Int     @default(7) // days after delivery
+  requirePhoto          Boolean @default(false)
+  moderationEnabled     Boolean @default(true)
+  widgetEnabled         Boolean @default(true)
+  starColor             String  @default("#FFD700")
+  updatedAt             DateTime @updatedAt
+}

@@ -1,0 +1,46 @@
+{% comment %}
+  Badge étoiles compact pour les collections
+{% endcomment %}
+
+{% schema %}
+{
+  "name": "Badge Étoiles",
+  "target": "section",
+  "stylesheet": "star-badge.css",
+  "javascript": "star-badge.js",
+  "settings": [
+    {
+      "type": "select",
+      "id": "size",
+      "label": "Taille",
+      "options": [
+        {
+          "value": "small",
+          "label": "Petit"
+        },
+        {
+          "value": "medium",
+          "label": "Moyen"
+        }
+      ],
+      "default": "small"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_count",
+      "label": "Afficher le nombre d'avis",
+      "default": true
+    }
+  ],
+  
+}
+{% endschema %}
+
+<div
+  class="star-badge-widget star-badge-{{ section.settings.size }}"
+  data-product-id="{{ product.id }}"
+  data-show-count="{{ section.settings.show_count }}"
+  data-shop="{{ shop.permanent_domain }}"
+>
+  <span class="star-badge-loading"></span>
+</div>

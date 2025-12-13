@@ -1,7 +1,11 @@
-import { useFetcher, useLoaderData, useRouteLoaderData } from "react-router";
+import {
+  redirect,
+  useFetcher,
+  useLoaderData,
+  useRouteLoaderData,
+} from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
-
 // export const loader = async ({ request }) => {
 //   await authenticate.admin(request);
 
@@ -25,8 +29,6 @@ import { authenticate } from "../shopify.server";
 //   return json.data;
 // }
 
-
-
 export const action = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
@@ -36,39 +38,98 @@ export const action = async ({ request }) => {
 export default function Index() {
   const fetcher = useFetcher();
 
-  const products = useRouteLoaderData('routes/app')
-  const storeOwner = products.json.shop.shopOwnerName;
+  const { totalReviews, pendingCount, avgRating, recentReviews } =
+    useRouteLoaderData("routes/app");
 
-  const subscriptionStatus = products.json.currentAppInstallation.activeSubscriptions.status;
-
-  console.log(subscriptionStatus)
   return (
-    <s-page heading="Dashboard page">
-      <s-section heading="Dashboard pages">
-        <s-paragraph>Welcome to the LIKE app <b>{storeOwner}</b></s-paragraph>
-      </s-section>
-      <s-section heading="Statistics">
-        <s-stack direction="inline" columnGap="large">
-          <s-section heading="Total">
-            <s-paragraph>140</s-paragraph>
-          </s-section>
-          <s-section heading="Total">
-            <s-paragraph>140</s-paragraph>
-          </s-section>
-          <s-section heading="Total">
-            <s-paragraph>140</s-paragraph>
-          </s-section>
+    <s-page
+    title="Dashboard">
+      <s-section>
+        <s-stack columns="2" direction="inline" gap="large">
+          <s-card>
+            <s-box padding="400">
+              <s-paragraph variant="headingMd" as="h2">
+                Total Reviews
+              </s-paragraph>
+              <s-paragraph variant="heading2xl" as="p">
+                {totalReviews}
+              </s-paragraph>
+            </s-box>
+          </s-card>
+
+          <s-card>
+            <s-box padding="400">
+              <s-paragraph variant="headingMd" as="h2">
+                Average Rating
+              </s-paragraph>
+              <s-paragraph variant="heading2xl" as="p">
+                {avgRating} ⭐
+              </s-paragraph>
+            </s-box>
+          </s-card>
+
+          <s-card>
+            <s-box padding="400">
+              <s-paragraph variant="headingMd" as="h2">
+                Pending Reviews
+              </s-paragraph>
+              <s-paragraph variant="heading2xl" as="p">
+                {pendingCount}
+              </s-paragraph>
+            </s-box>
+          </s-card>
+
+          <s-card>
+            <s-box padding="400">
+              <s-paragraph variant="headingMd" as="h2">
+                Response Rate
+              </s-paragraph>
+              <s-paragraph variant="heading2xl" as="p">
+                {totalReviews > 0 ? "100%" : "0%"}
+              </s-paragraph>
+            </s-box>
+          </s-card>
         </s-stack>
       </s-section>
 
-      <s-section heading="Tutorial">
-        <s-ordered-list>
-          <s-list-item>Go to your theme editor</s-list-item>
-          <s-list-item>Select default product page</s-list-item>
-          <s-list-item>Add new section</s-list-item>
-          <s-list-item>Click on app</s-list-item>
-          <s-list-item>Click on Like product</s-list-item>
-        </s-ordered-list>
+      <s-section heading="Recent review">
+        <s-card>
+          <s-paragraph padding="400">
+            <s-text variant="headingMd" as="h2">
+              Recent Reviews are displayed here
+            </s-text>
+          </s-paragraph>
+
+          {recentReviews.map((review, index) => (
+            <div key={review.id}>
+              <s-box padding="400">
+                <s-stack vertical spacing="200">
+                  <s-stack alignment="space-between">
+                    <s-paragraph variant="bodyMd" fontWeight="semibold">
+                      {review.customerName}
+                    </s-paragraph>
+                    <s-badge tone={review.published ? "success" : "info"}>
+                      {review.published ? "Published" : "Pending"}
+                    </s-badge>
+                  </s-stack>
+
+                  <div>{"⭐".repeat(review.rating)}</div>
+
+                  <s-paragraph variant="bodyMd" tone="subdued">
+                    {review.content.substring(0, 100)}...
+                  </s-paragraph>
+
+                  <s-button-group>
+                    <s-button href={`/app/reviews/${review.id}`}>
+                      View Details
+                    </s-button>
+                  </s-button-group>
+                </s-stack>
+              </s-box>
+              {index < recentReviews.length - 1 && <s-divider />}
+            </div>
+          ))}
+        </s-card>
       </s-section>
     </s-page>
   );
