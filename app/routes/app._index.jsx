@@ -1,14 +1,31 @@
-import { useEffect } from "react";
-import { useFetcher } from "react-router";
-import { useAppBridge } from "@shopify/app-bridge-react";
+import { useFetcher, useLoaderData, useRouteLoaderData } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 
-export const loader = async ({ request }) => {
-  await authenticate.admin(request);
+// export const loader = async ({ request }) => {
+//   await authenticate.admin(request);
 
-  return null;
-};
+//   return null;
+// };
+
+// export const loader = async ({request}) => {
+//   const { admin } = await authenticate.admin(request);
+//   const response = await admin.graphql(
+//     `#graphql
+//   query GetProducts {
+//     products(first: 10) {
+//       nodes {
+//         id
+//         title
+//       }
+//     }
+//   }`,
+//   );
+//   const json = await response.json();
+//   return json.data;
+// }
+
+
 
 export const action = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
@@ -19,10 +36,16 @@ export const action = async ({ request }) => {
 export default function Index() {
   const fetcher = useFetcher();
 
+  const products = useRouteLoaderData('routes/app')
+  const storeOwner = products.json.shop.shopOwnerName;
+
+  const subscriptionStatus = products.json.currentAppInstallation.activeSubscriptions.status;
+
+  console.log(subscriptionStatus)
   return (
     <s-page heading="Dashboard page">
       <s-section heading="Dashboard pages">
-        <s-paragraph>Welcome to the like plan page</s-paragraph>
+        <s-paragraph>Welcome to the LIKE app <b>{storeOwner}</b></s-paragraph>
       </s-section>
       <s-section heading="Statistics">
         <s-stack direction="inline" columnGap="large">
