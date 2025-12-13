@@ -92,7 +92,7 @@ export default function Reviews() {
   return (
     <s-page title="Reviews">
       <s-page-actions slot="actions">
-        <s-button href="/app/settings">Settings</s-button>
+        <s-button href="/app/import-reviews">Import reviews</s-button>
       </s-page-actions>
 
       <s-section>
