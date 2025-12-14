@@ -1,229 +1,82 @@
-import { authenticate } from "../shopify.server";
-import { useState, useEffect } from "react";
-import db from "../db.server";
-import { useLoaderData, useSubmit, useNavigation } from "react-router";
+import React, { useState } from "react";
 
-export async function loader({ request }) {
-  const { session } = await authenticate.admin(request);
+/**
+ * Minimal functional Settings Page for Review App
+ * Fully static for now
+ */
 
-  let settings = await db.settings.findUnique({
-    where: { shop: session.shop },
+export default function SettingsPage() {
+  const [settings, setSettings] = useState({
+    autoPublish: false,
+    emailNotifications: true,
+    reviewReminder: true,
+    ratingThreshold: 3,
   });
 
-  if (!settings) {
-    settings = await db.settings.create({
-      data: { shop: session.shop },
-    });
-  }
-
-  return { settings };
-}
-
-export async function action({ request }) {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-
-  const data = {
-    autoPublish: formData.get("autoPublish") === "true",
-    emailEnabled: formData.get("emailEnabled") === "true",
-    emailDelay: parseInt(formData.get("emailDelay")),
-    moderationEnabled: formData.get("moderationEnabled") === "true",
-    widgetEnabled: formData.get("widgetEnabled") === "true",
-    starColor: formData.get("starColor"),
+  const handleToggle = (key) => {
+    setSettings({ ...settings, [key]: !settings[key] });
   };
 
-  await db.settings.upsert({
-    where: { shop: session.shop },
-    update: data,
-    create: { ...data, shop: session.shop },
-  });
-
-  return { success: true };
-}
-
-export default function Settings() {
-  const { settings } = useLoaderData();
-  const submit = useSubmit();
-  const navigation = useNavigation();
-  const [showToast, setShowToast] = useState(false);
-
-  const [formState, setFormState] = useState({
-    autoPublish: settings.autoPublish,
-    emailEnabled: settings.emailEnabled,
-    emailDelay: settings.emailDelay.toString(),
-    moderationEnabled: settings.moderationEnabled,
-    widgetEnabled: settings.widgetEnabled,
-    starColor: settings.starColor,
-  });
-
-  const isLoading = navigation.state === "submitting";
-
-  useEffect(() => {
-    if (navigation.state === "idle" && navigation.formData) {
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
-    }
-  }, [navigation.state]);
-
-  const handleSubmit = () => {
-    const formData = new FormData();
-    Object.entries(formState).forEach(([key, value]) => {
-      formData.append(key, value.toString());
-    });
-    submit(formData, { method: "post" });
+  const handleSave = () => {
+    alert("Settings saved! (static demo)");
   };
 
   return (
-    <>
-      {showToast && (
-        <s-toast open duration={3000}>
-          Settings saved successfully
-        </s-toast>
-      )}
+    <s-page title="App Settings" subtitle="Configure your review app behavior">
+      <s-section>
+        <s-card>
+          <s-stack vertical spacing="300">
+            <SettingToggle
+              label="Automatically publish reviews"
+              value={settings.autoPublish}
+              onToggle={() => handleToggle("autoPublish")}
+            />
+            <SettingToggle
+              label="Email notifications on new review"
+              value={settings.emailNotifications}
+              onToggle={() => handleToggle("emailNotifications")}
+            />
+            <SettingToggle
+              label="Send review reminders to customers"
+              value={settings.reviewReminder}
+              onToggle={() => handleToggle("reviewReminder")}
+            />
+            <SettingInput
+              label="Minimum rating to feature review"
+              value={settings.ratingThreshold}
+              onChange={(val) => setSettings({ ...settings, ratingThreshold: val })}
+              type="number"
+              min={1}
+              max={5}
+            />
+            <s-button primary onClick={handleSave}>Save Settings</s-button>
+          </s-stack>
+        </s-card>
+      </s-section>
+    </s-page>
+  );
+}
 
-      <s-page title="Settings">
-        <s-page-actions slot="actions">
-          <s-button
-            variant="primary"
-            onClick={handleSubmit}
-            loading={isLoading}
-          >
-            Save Settings
-          </s-button>
-        </s-page-actions>
+function SettingToggle({ label, value, onToggle }) {
+  return (
+    <s-stack alignment="space-between">
+      <s-text>{label}</s-text>
+      <s-switch checked={value} onChange={onToggle} />
+    </s-stack>
+  );
+}
 
-        <s-layout>
-          <s-layout-section>
-            {/* Review Management */}
-            <s-card>
-              <s-box padding="400">
-                <s-text variant="headingMd">Review Management</s-text>
-              </s-box>
-
-              <s-divider />
-
-              <s-box padding="400">
-                <s-stack vertical spacing="400">
-                  <s-checkbox
-                    label="Auto-publish reviews"
-                    helpText="Automatically publish new reviews without manual approval"
-                    checked={formState.autoPublish}
-                    onChange={(e) =>
-                      setFormState({
-                        ...formState,
-                        autoPublish: e.target.checked,
-                      })
-                    }
-                  />
-
-                  <s-checkbox
-                    label="Enable moderation"
-                    helpText="Require manual approval before reviews are published"
-                    checked={formState.moderationEnabled}
-                    onChange={(e) =>
-                      setFormState({
-                        ...formState,
-                        moderationEnabled: e.target.checked,
-                      })
-                    }
-                  />
-                </s-stack>
-              </s-box>
-            </s-card>
-
-            {/* Email Settings */}
-            <s-card>
-              <s-box padding="400">
-                <s-text variant="headingMd">Email Settings</s-text>
-              </s-box>
-
-              <s-divider />
-
-              <s-box padding="400">
-                <s-stack vertical spacing="400">
-                  <s-checkbox
-                    label="Send review request emails"
-                    helpText="Automatically email customers to request reviews after delivery"
-                    checked={formState.emailEnabled}
-                    onChange={(e) =>
-                      setFormState({
-                        ...formState,
-                        emailEnabled: e.target.checked,
-                      })
-                    }
-                  />
-
-                  <s-text-field
-                    label="Days after delivery"
-                    type="number"
-                    value={formState.emailDelay}
-                    onChange={(e) =>
-                      setFormState({ ...formState, emailDelay: e.target.value })
-                    }
-                    helpText="Number of days to wait after order delivery"
-                    min="1"
-                    max="30"
-                  />
-                </s-stack>
-              </s-box>
-            </s-card>
-
-            {/* Widget Display */}
-            <s-card>
-              <s-box padding="400">
-                <s-text variant="headingMd">Widget Display</s-text>
-              </s-box>
-
-              <s-divider />
-
-              <s-box padding="400">
-                <s-stack vertical spacing="400">
-                  <s-checkbox
-                    label="Show widget on storefront"
-                    helpText="Display the review widget on product pages"
-                    checked={formState.widgetEnabled}
-                    onChange={(e) =>
-                      setFormState({
-                        ...formState,
-                        widgetEnabled: e.target.checked,
-                      })
-                    }
-                  />
-
-                  <s-text-field
-                    label="Star color"
-                    type="color"
-                    value={formState.starColor}
-                    onChange={(e) =>
-                      setFormState({ ...formState, starColor: e.target.value })
-                    }
-                    helpText="Choose the color for star ratings"
-                  />
-                </s-stack>
-              </s-box>
-            </s-card>
-
-            {/* Danger Zone */}
-            <s-card>
-              <s-box padding="400">
-                <s-stack vertical spacing="200">
-                  <s-text variant="headingMd">Danger Zone</s-text>
-                  <s-button
-                    variant="critical"
-                    onClick={() => {
-                      if (confirm("Delete all unpublished reviews?")) {
-                        // Handle deletion
-                      }
-                    }}
-                  >
-                    Delete Unpublished Reviews
-                  </s-button>
-                </s-stack>
-              </s-box>
-            </s-card>
-          </s-layout-section>
-        </s-layout>
-      </s-page>
-    </>
+function SettingInput({ label, value, onChange, type = "text", min, max }) {
+  return (
+    <s-stack alignment="space-between">
+      <s-text>{label}</s-text>
+      <s-text-field
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        min={min}
+        max={max}
+      />
+    </s-stack>
   );
 }

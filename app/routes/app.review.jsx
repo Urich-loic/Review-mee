@@ -71,7 +71,7 @@ export default function ReviewsLayout() {
         }
       `}</style>
 
-      <s-box>
+      <div className="tabs-container">
         <div className="tabs">
           <button
             className={`tab ${activeTab === "reviews" ? "active" : ""}`}
@@ -99,7 +99,7 @@ export default function ReviewsLayout() {
             <span className="tab-badge">3</span>
           </button>
         </div>
-      </s-box>
+      </div>
 
       <Outlet />
     </>
