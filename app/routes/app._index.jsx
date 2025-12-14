@@ -1,140 +1,105 @@
-import {
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useRouteLoaderData,
-} from "react-router";
-import { boundary } from "@shopify/shopify-app-react-router/server";
-import { authenticate } from "../shopify.server";
-// export const loader = async ({ request }) => {
-//   await authenticate.admin(request);
+import React from "react";
 
-//   return null;
-// };
-
-// export const loader = async ({request}) => {
-//   const { admin } = await authenticate.admin(request);
-//   const response = await admin.graphql(
-//     `#graphql
-//   query GetProducts {
-//     products(first: 10) {
-//       nodes {
-//         id
-//         title
-//       }
-//     }
-//   }`,
-//   );
-//   const json = await response.json();
-//   return json.data;
-// }
-
-export const action = async ({ request }) => {
-  const { admin } = await authenticate.admin(request);
-
-  return null;
+/**
+ * STATIC MOCK DATA — NO BACKEND DEPENDENCY
+ */
+const stats = {
+  totalReviews: 124,
+  pendingCount: 9,
+  avgRating: 4.6,
+  responseRate: 92,
 };
 
-export default function Index() {
-  const fetcher = useFetcher();
+const recentReviews = [
+  {
+    id: "1",
+    customerName: "Sarah M.",
+    rating: 5,
+    content: "Amazing product, fast delivery and great support!",
+    published: true,
+    date: "2 hours ago",
+  },
+  {
+    id: "2",
+    customerName: "John D.",
+    rating: 4,
+    content: "Very good quality. Would recommend to others.",
+    published: true,
+    date: "Yesterday",
+  },
+  {
+    id: "3",
+    customerName: "Emily R.",
+    rating: 3,
+    content: "Product is fine but shipping was slower than expected.",
+    published: false,
+    date: "2 days ago",
+  },
+];
 
-  const { totalReviews, pendingCount, avgRating, recentReviews } =
-    useRouteLoaderData("routes/app");
-
+export default function ReviewDashboard() {
   return (
-    <s-page
-    title="Dashboard">
+    <s-page title="Reviews" subtitle="Overview of customer feedback">
+      {/* METRICS */}
       <s-section>
-        <s-stack columns="2" direction="inline" gap="large">
-          <s-card>
-            <s-box padding="400">
-              <s-paragraph variant="headingMd" as="h2">
-                Total Reviews
-              </s-paragraph>
-              <s-paragraph variant="heading2xl" as="p">
-                {totalReviews}
-              </s-paragraph>
-            </s-box>
-          </s-card>
-
-          <s-card>
-            <s-box padding="400">
-              <s-paragraph variant="headingMd" as="h2">
-                Average Rating
-              </s-paragraph>
-              <s-paragraph variant="heading2xl" as="p">
-                {avgRating} ⭐
-              </s-paragraph>
-            </s-box>
-          </s-card>
-
-          <s-card>
-            <s-box padding="400">
-              <s-paragraph variant="headingMd" as="h2">
-                Pending Reviews
-              </s-paragraph>
-              <s-paragraph variant="heading2xl" as="p">
-                {pendingCount}
-              </s-paragraph>
-            </s-box>
-          </s-card>
-
-          <s-card>
-            <s-box padding="400">
-              <s-paragraph variant="headingMd" as="h2">
-                Response Rate
-              </s-paragraph>
-              <s-paragraph variant="heading2xl" as="p">
-                {totalReviews > 0 ? "100%" : "0%"}
-              </s-paragraph>
-            </s-box>
-          </s-card>
+        <s-stack alignment="space-between" gap="large" direction="inline">
+          <Metric label="Total reviews" value={stats.totalReviews} />
+          <Metric label="Average rating" value={`${stats.avgRating} ★`} />
+          <Metric
+            label="Pending reviews"
+            value={stats.pendingCount}
+            tone="warning"
+          />
+          <Metric label="Response rate" value={`${stats.responseRate}%`} />
         </s-stack>
       </s-section>
 
-      <s-section heading="Recent review">
+      {/* REVIEWS */}
+      <s-section
+        heading="Recent reviews"
+        secondaryAction={{ content: "View all", url: "/app/reviews" }}
+      >
         <s-card>
-          <s-paragraph padding="400">
-            <s-text variant="headingMd" as="h2">
-              Recent Reviews are displayed here
-            </s-text>
-          </s-paragraph>
-
-          {recentReviews.map((review, index) => (
-            <div key={review.id}>
-              <s-box padding="400">
+          <s-resource-list
+            resourceName={{ singular: "review", plural: "reviews" }}
+            items={recentReviews}
+            renderItem={(review) => (
+              <s-resource-item id={review.id}>
                 <s-stack vertical spacing="200">
                   <s-stack alignment="space-between">
-                    <s-paragraph variant="bodyMd" fontWeight="semibold">
-                      {review.customerName}
-                    </s-paragraph>
-                    <s-badge tone={review.published ? "success" : "info"}>
+                    <s-text fontWeight="semibold">{review.customerName}</s-text>
+                    <s-badge tone={review.published ? "success" : "attention"}>
                       {review.published ? "Published" : "Pending"}
                     </s-badge>
                   </s-stack>
 
-                  <div>{"⭐".repeat(review.rating)}</div>
+                  <s-text>{"★".repeat(review.rating)}</s-text>
 
-                  <s-paragraph variant="bodyMd" tone="subdued">
-                    {review.content.substring(0, 100)}...
-                  </s-paragraph>
+                  <s-text tone="subdued">{review.content}</s-text>
 
-                  <s-button-group>
-                    <s-button href={`/app/reviews/${review.id}`}>
-                      View Details
-                    </s-button>
-                  </s-button-group>
+                  <s-stack alignment="space-between">
+                    <s-text tone="subdued">{review.date}</s-text>
+                    <s-button size="slim">Reply</s-button>
+                  </s-stack>
                 </s-stack>
-              </s-box>
-              {index < recentReviews.length - 1 && <s-divider />}
-            </div>
-          ))}
+              </s-resource-item>
+            )}
+          />
         </s-card>
       </s-section>
     </s-page>
   );
 }
 
-export const headers = (headersArgs) => {
-  return boundary.headers(headersArgs);
-};
+function Metric({ label, value }) {
+  return (
+    <s-card>
+      <s-box padding="400">
+        <s-stack vertical spacing="100">
+          <s-text tone="subdued">{label}</s-text>
+          <s-text variant="heading2xl">{value}</s-text>
+        </s-stack>
+      </s-box>
+    </s-card>
+  );
+}

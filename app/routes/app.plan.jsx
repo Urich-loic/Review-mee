@@ -40,18 +40,24 @@ export default function AdditionalPage() {
 
       <s-stack direction="inline" gap="large">
         <PricingCard
-          title="Standard"
-          description="This is a great plan for stores that are just starting out"
+          title="Gratuit"
+          description="Idéal pour tester l’app et afficher ses premiers avis clients"
           features={[
-            "Process up to 1,000 orders/mo",
-            "Amazing feature",
-            "Another really cool feature",
-            "24/7 Customer Support",
+            "✔️ Collecte d’avis clients basique",
+            "✔️ Widget d’avis sur la page produit",
+            "✔️ Notes et étoiles visibles",
+            "✔️ Avis texte (sans photos)",
+            "✔️ Modération manuelle des avis",
+            "✔️ Support par email standard",
+            "❌ Emails automatiques de demande d’avis",
+            "❌ Photos dans les avis",
+            "❌ Statistiques avancées",
+            "❌ Personnalisation avancée du widget"
           ]}
-          price="$19"
-          frequency="month"
+          price="$0"
+          frequency="mois"
           button={{
-            content: "Select Plan",
+            content: "Commencer gratuitement",
             props: {
               variant: "primary",
               onClick: () => console.log("clicked plan!"),
@@ -60,19 +66,22 @@ export default function AdditionalPage() {
         />
 
         <PricingCard
-          title="Advanced"
+          title="Pro"
           featuredText="Most Popular"
-          description="For stores that are growing and need a reliable solution to scale with them"
+          description="Tout ce qu’il faut pour collecter plus d’avis et renforcer la confiance"
           features={[
-            "Process up to 10,000 orders/mo",
-            "Amazing feature",
-            "Another really cool feature",
-            "24/7 Customer Support",
+            "✔️ Tout le plan Starter",
+            "✔️ Emails automatiques de demande d’avis après achat",
+            "✔️ Avis avec photos clients",
+            "✔️ Personnalisation du widget (couleurs, style)",
+            "✔️ Tri et filtres des avis (note, date, utilité)",
+            "✔️ Statistiques essentielles (note moyenne, nombre d’avis)",
+            "✔️ Avis illimités"
           ]}
-          price="$49"
-          frequency="month"
+          price="$9"
+          frequency="mois"
           button={{
-            content: "Select Plan",
+            content: "Passer au plan Pro",
             props: {
               variant: "primary",
               onClick: () => console.log("clicked plan!"),
@@ -81,18 +90,21 @@ export default function AdditionalPage() {
         />
 
         <PricingCard
-          title="Premium"
-          description="The best of the best, for stores that have the highest order processing needs"
+          title="Business"
+          description="Pour les marques établies, Automatisation, performance et contrôle avancé"
           features={[
-            "Process up to 100,000 orders/mo",
-            "Amazing feature",
-            "Another really cool feature",
-            "24/7 Customer Support",
+                  "✔️ Tout le plan Pro",
+                  "✔️ Automatisations avancées (rappels, règles intelligentes)",
+                  "✔️ Statistiques avancées & insights clients",
+                  "✔️ Avis vérifiés (acheteurs confirmés)",
+                  "✔️ Support prioritaire",
+                  "✔️ Optimisation SEO des avis",
+                  "✔️ Multilingue (selon la boutique)"
           ]}
-          price="$99"
-          frequency="month"
+          price="$29"
+          frequency="mois"
           button={{
-            content: "Select Plan",
+            content: "Passer au plan Business",
             props: {
               variant: "primary",
               onClick: () => console.log("clicked plan!"),
