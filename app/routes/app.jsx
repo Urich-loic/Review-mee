@@ -82,15 +82,76 @@ export default function App() {
 
   // console.log(json.products);
   return (
-    <AppProvider embedded apiKey={apiKey}>
-      <s-app-nav>
-        <s-link href="/app">Dashboard</s-link>
-        <s-link href="/app/review">Review</s-link>
-        <s-link href="/app/plan">Plan</s-link>
-        <s-link href="/app/settings">Settings</s-link>
-      </s-app-nav>
-      <Outlet />
-    </AppProvider>
+    <>
+      <style>{`
+        .tabs-container {
+          background: white;
+          border-bottom: 1px solid #e5e7eb;
+          margin-bottom: 24px;
+        }
+
+        .tabs {
+          display: flex;
+          gap: 0;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 0 20px;
+        }
+
+        .tab {
+          padding: 16px 24px;
+          border: none;
+          background: transparent;
+          color: #6b7280;
+          font-size: 15px;
+          font-weight: 500;
+          cursor: pointer;
+          position: relative;
+          transition: all 0.2s;
+          border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+          color: #000;
+          background: #f9fafb;
+        }
+
+        .tab.active {
+          color: #000;
+          font-weight: 600;
+          border-bottom-color: #000;
+        }
+
+        .tab-icon {
+          margin-right: 8px;
+        }
+
+        .tab-badge {
+          display: inline-block;
+          margin-left: 8px;
+          padding: 2px 8px;
+          background: #f3f4f6;
+          color: #374151;
+          border-radius: 12px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .tab.active .tab-badge {
+          background: #000;
+          color: #fff;
+        }
+      `}</style>
+      <AppProvider embedded apiKey={apiKey}>
+        <s-app-nav>
+          <s-link href="/app">Dashboard</s-link>
+          <s-link href="/app/review">Review</s-link>
+          <s-link href="/app/plan">Plan</s-link>
+          <s-link href="/app/settings">Settings</s-link>
+        </s-app-nav>
+        <Outlet />
+      </AppProvider>
+    </>
   );
 }
 

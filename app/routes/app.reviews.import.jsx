@@ -3,6 +3,7 @@ import { authenticate } from "../shopify.server";
 import Papa from "papaparse";
 import prisma from "../db.server";
 import { useActionData, useNavigation, useSubmit } from "react-router";
+import ReviewTabs from "./ReviewTabs";
 
 export async function action({ request }) {
   const { session } = await authenticate.admin(request);
@@ -12,7 +13,7 @@ export async function action({ request }) {
   const updateExisting = formData.get("updateExisting") === "true";
 
   if (!csvData) {
-    return { error: "No CSV data provided", status: 400 };
+    return json({ error: "No CSV data provided" }, { status: 400 });
   }
 
   try {
@@ -30,6 +31,7 @@ export async function action({ request }) {
       const row = rows[i];
 
       try {
+        // Validation des champs requis
         if (
           !row.productId ||
           !row.rating ||
@@ -54,6 +56,7 @@ export async function action({ request }) {
           continue;
         }
 
+        // Parser les images si présentes
         let images = null;
         if (row.images) {
           try {
@@ -61,7 +64,9 @@ export async function action({ request }) {
               typeof row.images === "string"
                 ? row.images
                 : JSON.stringify(row.images);
-          } catch (e) {}
+          } catch (e) {
+            // Ignorer les erreurs de parsing des images
+          }
         }
 
         const reviewData = {
@@ -83,6 +88,7 @@ export async function action({ request }) {
           createdAt: row.date ? new Date(row.date) : new Date(),
         };
 
+        // Vérifier si l'avis existe déjà
         if (updateExisting && row.customerEmail) {
           const existing = await prisma.review.findFirst({
             where: {
@@ -102,6 +108,7 @@ export async function action({ request }) {
           }
         }
 
+        // Créer un nouvel avis
         await prisma.review.create({ data: reviewData });
         results.imported++;
       } catch (error) {
@@ -120,11 +127,10 @@ export async function action({ request }) {
     };
   } catch (error) {
     console.error("Import error:", error);
-    return{
-        error: "Erreur lors de l'import: " + error.message,
-        status: 500
-      }
-    ;
+    return {
+      error: "Erreur lors de l'import: " + error.message,
+      status: 500,
+    };
   }
 }
 
@@ -134,7 +140,7 @@ export default function ImportReviews() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
-  // États
+  // États du composant
   const [currentStep, setCurrentStep] = useState(1);
   const [file, setFile] = useState(null);
   const [parsedData, setParsedData] = useState(null);
@@ -142,8 +148,9 @@ export default function ImportReviews() {
   const [autoPublish, setAutoPublish] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(false);
   const [validationErrors, setValidationErrors] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
 
-  // Validation côté client
+  // Fonction de validation côté client
   const validateData = (data) => {
     const errors = [];
     data.forEach((row, idx) => {
@@ -188,7 +195,7 @@ export default function ImportReviews() {
     return errors;
   };
 
-  // Gérer le changement de fichier
+  // Gestion du changement de fichier
   const handleFileChange = useCallback((e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
@@ -202,7 +209,6 @@ export default function ImportReviews() {
     setParsedData(null);
     setValidationErrors([]);
 
-    // Parser avec Papaparse
     Papa.parse(selectedFile, {
       header: true,
       skipEmptyLines: true,
@@ -212,8 +218,6 @@ export default function ImportReviews() {
         setParseErrors(results.errors);
         const errors = validateData(results.data);
         setValidationErrors(errors);
-
-        // Passer à l'étape 2 si tout est ok
         if (results.data.length > 0 && errors.length === 0) {
           setCurrentStep(2);
         }
@@ -224,7 +228,47 @@ export default function ImportReviews() {
     });
   }, []);
 
-  // Soumettre l'import
+  // Gestion du Drag & Drop
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && droppedFile.name.endsWith(".csv")) {
+      setFile(droppedFile);
+      setParsedData(null);
+      setValidationErrors([]);
+
+      Papa.parse(droppedFile, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        complete: (results) => {
+          setParsedData(results.data);
+          setParseErrors(results.errors);
+          const errors = validateData(results.data);
+          setValidationErrors(errors);
+          if (results.data.length > 0 && errors.length === 0) {
+            setCurrentStep(2);
+          }
+        },
+      });
+    } else {
+      alert("Veuillez déposer un fichier CSV valide");
+    }
+  }, []);
+
+  // Soumission du formulaire
   const handleSubmit = useCallback(() => {
     if (!parsedData || validationErrors.length > 0) return;
 
@@ -236,10 +280,10 @@ export default function ImportReviews() {
     setCurrentStep(4);
   }, [parsedData, autoPublish, updateExisting, submit, validationErrors]);
 
-  // Télécharger le template
+  // Télécharger le template CSV
   const downloadTemplate = () => {
     const template = `productId,rating,customerName,customerEmail,title,content,verified,date,images
-9876543210,5,Jean Dupont,jean@example.com,Excellent produit !,J'adore ce produit. Qualité exceptionnelle.,true,2024-01-15,
+9876543210,5,Jean Dupont,jean@example.com,Excellent produit !,J'adore ce produit. Qualité exceptionnelle et livraison rapide.,true,2024-01-15,
 9876543210,4,Marie Martin,marie@example.com,Très bien,Bon produit mais un peu cher.,false,2024-01-16,"[""https://example.com/photo1.jpg""]"
 9876543210,3,Pierre Dubois,pierre@example.com,,Correct sans plus.,false,2024-01-17,`;
 
@@ -261,7 +305,13 @@ export default function ImportReviews() {
     setParseErrors([]);
     setValidationErrors([]);
     setCurrentStep(1);
+    setAutoPublish(false);
+    setUpdateExisting(false);
   };
+
+  // ... Suite dans la Partie 3/5
+
+  // Continuez dans le composant ImportReviews()
 
   return (
     <>
@@ -271,6 +321,7 @@ export default function ImportReviews() {
           margin: 0 auto;
         }
 
+        /* Barre de progression */
         .progress-bar {
           display: flex;
           justify-content: space-between;
@@ -337,6 +388,7 @@ export default function ImportReviews() {
           font-weight: 600;
         }
 
+        /* Zone d'upload */
         .upload-zone {
           border: 3px dashed #d1d5db;
           border-radius: 12px;
@@ -358,11 +410,18 @@ export default function ImportReviews() {
           background: #f0fdf4;
         }
 
+        .upload-zone.dragging {
+          border-color: #10b981;
+          background: #f0fdf4;
+          transform: scale(1.02);
+        }
+
         .upload-icon {
           font-size: 48px;
           margin-bottom: 16px;
         }
 
+        /* Grille de statistiques */
         .stats-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -376,6 +435,7 @@ export default function ImportReviews() {
           padding: 24px;
           border-radius: 12px;
           text-align: center;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .stat-card.success {
@@ -394,6 +454,7 @@ export default function ImportReviews() {
           font-size: 36px;
           font-weight: 700;
           margin-bottom: 8px;
+          line-height: 1;
         }
 
         .stat-label {
@@ -401,6 +462,7 @@ export default function ImportReviews() {
           opacity: 0.9;
         }
 
+        /* Tableau de prévisualisation */
         .preview-table {
           width: 100%;
           border-collapse: collapse;
@@ -432,6 +494,7 @@ export default function ImportReviews() {
           background: #f9fafb;
         }
 
+        /* Badges et alertes */
         .error-badge {
           display: inline-block;
           padding: 4px 8px;
@@ -460,48 +523,7 @@ export default function ImportReviews() {
           border-color: #10b981;
         }
 
-        .action-buttons {
-          display: flex;
-          gap: 12px;
-          justify-content: center;
-          margin-top: 24px;
-        }
-
-        .btn {
-          padding: 12px 24px;
-          border-radius: 8px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
-          border: none;
-          font-size: 14px;
-        }
-
-        .btn-primary {
-          background: #000;
-          color: #fff;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          background: #1f2937;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-
-        .btn-secondary {
-          background: #f3f4f6;
-          color: #374151;
-        }
-
-        .btn-secondary:hover {
-          background: #e5e7eb;
-        }
-
-        .btn:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
+        /* Animation de succès */
         .success-animation {
           text-align: center;
           padding: 40px;
@@ -538,23 +560,126 @@ export default function ImportReviews() {
           to { transform: rotate(360deg); }
         }
 
+        /* Boutons */
+        .action-buttons {
+          display: flex;
+          gap: 12px;
+          justify-content: center;
+          margin-top: 24px;
+          flex-wrap: wrap;
+        }
+
+        .btn {
+          padding: 12px 24px;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          border: none;
+          font-size: 14px;
+        }
+
+        .btn-primary {
+          background: #000;
+          color: #fff;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+          background: #1f2937;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary {
+          background: #f3f4f6;
+          color: #374151;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+          background: #e5e7eb;
+        }
+
+        .btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
-          .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-
           .progress-bar {
-            font-size: 12px;
+            flex-direction: column;
+            gap: 16px;
           }
 
-          .step-circle {
-            width: 32px;
-            height: 32px;
-            font-size: 14px;
+          .progress-bar::before {
+            display: none;
           }
+
+          .stats-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .upload-zone {
+            padding: 40px 20px;
+          }
+
+          .preview-table {
+            font-size: 11px;
+          }
+
+          .preview-table th,
+          .preview-table td {
+            padding: 8px;
+          }
+
+          .action-buttons {
+            flex-direction: column;
+          }
+
+          .btn {
+            width: 100%;
+          }
+        }
+
+        /* Scroll personnalisé */
+        .preview-table tbody {
+          display: block;
+          max-height: 400px;
+          overflow-y: auto;
+        }
+
+        .preview-table thead,
+        .preview-table tbody tr {
+          display: table;
+          width: 100%;
+          table-layout: fixed;
+        }
+
+        /* Scrollbar personnalisée */
+        ::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: #555;
         }
       `}</style>
 
+      {/* Suite dans la Partie 4/5 : JSX de l'interface */}
+
+      {/* Continuez après les styles */}
+      <ReviewTabs />
       <s-page title="Importer des Avis">
         <div className="import-container">
           {/* Barre de progression */}
@@ -612,7 +737,7 @@ export default function ImportReviews() {
             </div>
           </div>
 
-          {/* ÉTAPE 1 : Upload */}
+          {/* STEP 1: Upload du fichier */}
           {currentStep === 1 && (
             <s-layout>
               <s-layout-section>
@@ -629,7 +754,12 @@ export default function ImportReviews() {
                       </div>
 
                       <label htmlFor="file-upload">
-                        <div className={`upload-zone ${file ? "active" : ""}`}>
+                        <div
+                          className={`upload-zone ${file ? "active" : ""} ${isDragging ? "dragging" : ""}`}
+                          onDragOver={handleDragOver}
+                          onDragLeave={handleDragLeave}
+                          onDrop={handleDrop}
+                        >
                           <input
                             id="file-upload"
                             type="file"
@@ -643,12 +773,12 @@ export default function ImportReviews() {
                           <s-text variant="headingMd">
                             {file
                               ? file.name
-                              : "Cliquez pour sélectionner un fichier CSV"}
+                              : "Cliquez ou glissez votre fichier CSV ici"}
                           </s-text>
                           <s-text variant="bodyMd" tone="subdued">
                             {file
                               ? `${(file.size / 1024).toFixed(2)} KB`
-                              : "ou glissez-déposez votre fichier ici"}
+                              : "Format accepté : .csv"}
                           </s-text>
                         </div>
                       </label>
@@ -716,6 +846,7 @@ export default function ImportReviews() {
                 </s-card>
               </s-layout-section>
 
+              {/* Instructions rapides */}
               <s-layout-section>
                 <s-card>
                   <s-box padding="400">
@@ -762,7 +893,7 @@ export default function ImportReviews() {
             </s-layout>
           )}
 
-          {/* ÉTAPE 2 : Prévisualisation */}
+          {/* STEP 2: Prévisualisation */}
           {currentStep === 2 && parsedData && (
             <s-layout>
               <s-layout-section>
@@ -842,7 +973,12 @@ export default function ImportReviews() {
                                         ❌ Erreur
                                       </span>
                                     ) : (
-                                      <span style={{ color: "#10b981" }}>
+                                      <span
+                                        style={{
+                                          color: "#10b981",
+                                          fontSize: "18px",
+                                        }}
+                                      >
                                         ✓
                                       </span>
                                     )}
@@ -881,6 +1017,316 @@ export default function ImportReviews() {
                         </button>
                       </div>
                     </s-stack>
+                  </s-box>
+                </s-card>
+              </s-layout-section>
+            </s-layout>
+          )}
+
+          {/* Suite dans la Partie 5/5 : Steps 3 et 4 */}
+
+          {/* STEP 3: Configuration */}
+          {currentStep === 3 && (
+            <s-layout>
+              <s-layout-section>
+                <s-card>
+                  <s-box padding="600">
+                    <s-stack vertical spacing="500">
+                      <div style={{ textAlign: "center" }}>
+                        <s-text variant="headingLg">⚙️ Options d'import</s-text>
+                        <s-text variant="bodyMd" tone="subdued">
+                          Configurez comment importer vos avis
+                        </s-text>
+                      </div>
+
+                      <s-stack vertical spacing="400">
+                        <div
+                          style={{
+                            padding: "24px",
+                            background: "#f9fafb",
+                            borderRadius: "12px",
+                            border: "2px solid #e5e7eb",
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: "16px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={autoPublish}
+                              onChange={(e) => setAutoPublish(e.target.checked)}
+                              style={{
+                                marginTop: "4px",
+                                width: "20px",
+                                height: "20px",
+                              }}
+                            />
+                            <div>
+                              <s-text variant="bodyMd" fontWeight="semibold">
+                                Publier automatiquement les avis
+                              </s-text>
+                              <s-text variant="bodySm" tone="subdued">
+                                Les avis seront visibles immédiatement sur votre
+                                boutique. Décochez pour une modération manuelle.
+                              </s-text>
+                            </div>
+                          </label>
+                        </div>
+
+                        <div
+                          style={{
+                            padding: "24px",
+                            background: "#f9fafb",
+                            borderRadius: "12px",
+                            border: "2px solid #e5e7eb",
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: "16px",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={updateExisting}
+                              onChange={(e) =>
+                                setUpdateExisting(e.target.checked)
+                              }
+                              style={{
+                                marginTop: "4px",
+                                width: "20px",
+                                height: "20px",
+                              }}
+                            />
+                            <div>
+                              <s-text variant="bodyMd" fontWeight="semibold">
+                                Mettre à jour les avis existants
+                              </s-text>
+                              <s-text variant="bodySm" tone="subdued">
+                                Si un avis existe déjà (même email + même
+                                produit), il sera mis à jour au lieu d'être
+                                dupliqué.
+                              </s-text>
+                            </div>
+                          </label>
+                        </div>
+                      </s-stack>
+
+                      <s-divider />
+
+                      <div
+                        style={{
+                          background: "#eff6ff",
+                          padding: "20px",
+                          borderRadius: "8px",
+                          border: "1px solid #3b82f6",
+                        }}
+                      >
+                        <s-stack vertical spacing="200">
+                          <s-text variant="bodyMd" fontWeight="semibold">
+                            📊 Résumé de l'import
+                          </s-text>
+                          <s-text variant="bodyMd">
+                            • {parsedData?.length || 0} avis seront importés
+                          </s-text>
+                          <s-text variant="bodyMd">
+                            • Statut:{" "}
+                            {autoPublish
+                              ? "Publiés immédiatement"
+                              : "En attente de modération"}
+                          </s-text>
+                          <s-text variant="bodyMd">
+                            • Doublons:{" "}
+                            {updateExisting
+                              ? "Mis à jour"
+                              : "Créés en nouveaux avis"}
+                          </s-text>
+                        </s-stack>
+                      </div>
+
+                      <div className="action-buttons">
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => setCurrentStep(2)}
+                        >
+                          ← Retour
+                        </button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={handleSubmit}
+                        >
+                          🚀 Lancer l'Import
+                        </button>
+                      </div>
+                    </s-stack>
+                  </s-box>
+                </s-card>
+              </s-layout-section>
+            </s-layout>
+          )}
+
+          {/* STEP 4: Import en cours / Résultats */}
+          {currentStep === 4 && (
+            <s-layout>
+              <s-layout-section>
+                <s-card>
+                  <s-box padding="600">
+                    {isSubmitting ? (
+                      <div className="success-animation">
+                        <div
+                          style={{
+                            width: "80px",
+                            height: "80px",
+                            border: "4px solid #f3f4f6",
+                            borderTopColor: "#000",
+                            borderRadius: "50%",
+                            animation: "spin 1s linear infinite",
+                            margin: "0 auto 24px",
+                          }}
+                        />
+                        <s-text variant="headingLg">Import en cours...</s-text>
+                        <s-text variant="bodyMd" tone="subdued">
+                          Veuillez patienter pendant que nous importons vos avis
+                        </s-text>
+                      </div>
+                    ) : actionData?.success ? (
+                      <s-stack vertical spacing="500">
+                        <div className="success-animation">
+                          <div className="checkmark" />
+                          <s-text
+                            variant="heading2xl"
+                            style={{ marginTop: "24px" }}
+                          >
+                            Import réussi !
+                          </s-text>
+                          <s-text variant="bodyLg" tone="subdued">
+                            {actionData.message}
+                          </s-text>
+                        </div>
+
+                        <div className="stats-grid">
+                          <div className="stat-card success">
+                            <div className="stat-value">
+                              {actionData.results.imported}
+                            </div>
+                            <div className="stat-label">Créés</div>
+                          </div>
+                          <div className="stat-card info">
+                            <div className="stat-value">
+                              {actionData.results.updated}
+                            </div>
+                            <div className="stat-label">Mis à jour</div>
+                          </div>
+                          <div className="stat-card warning">
+                            <div className="stat-value">
+                              {actionData.results.skipped}
+                            </div>
+                            <div className="stat-label">Ignorés</div>
+                          </div>
+                          <div className="stat-card">
+                            <div className="stat-value">
+                              {actionData.results.total}
+                            </div>
+                            <div className="stat-label">Total</div>
+                          </div>
+                        </div>
+
+                        {actionData.results.errors.length > 0 && (
+                          <s-card>
+                            <s-box padding="400">
+                              <s-stack vertical spacing="300">
+                                <s-text variant="headingMd">
+                                  ⚠️ Erreurs rencontrées (
+                                  {actionData.results.errors.length})
+                                </s-text>
+                                <div
+                                  style={{
+                                    maxHeight: "200px",
+                                    overflow: "auto",
+                                  }}
+                                >
+                                  {actionData.results.errors.map((err, idx) => (
+                                    <div
+                                      key={idx}
+                                      style={{
+                                        padding: "12px",
+                                        background: "#fef2f2",
+                                        border: "1px solid #fecaca",
+                                        borderRadius: "6px",
+                                        marginBottom: "8px",
+                                        fontSize: "13px",
+                                      }}
+                                    >
+                                      <strong>Ligne {err.row}:</strong>{" "}
+                                      {err.error}
+                                    </div>
+                                  ))}
+                                </div>
+                              </s-stack>
+                            </s-box>
+                          </s-card>
+                        )}
+
+                        <div className="action-buttons">
+                          <button
+                            className="btn btn-secondary"
+                            onClick={resetImport}
+                          >
+                            📥 Importer un autre fichier
+                          </button>
+                          <button
+                            className="btn btn-primary"
+                            onClick={() =>
+                              (window.location.href = "/app/reviews")
+                            }
+                          >
+                            👁️ Voir les avis
+                          </button>
+                        </div>
+                      </s-stack>
+                    ) : actionData?.error ? (
+                      <s-stack vertical spacing="400">
+                        <div style={{ textAlign: "center", padding: "40px" }}>
+                          <div
+                            style={{
+                              fontSize: "64px",
+                              marginBottom: "16px",
+                            }}
+                          >
+                            ❌
+                          </div>
+                          <s-text variant="heading2xl">Erreur d'import</s-text>
+                          <div
+                            style={{
+                              marginTop: "16px",
+                              padding: "16px",
+                              background: "#fef2f2",
+                              border: "1px solid #fecaca",
+                              borderRadius: "8px",
+                            }}
+                          >
+                            <s-text variant="bodyMd">{actionData.error}</s-text>
+                          </div>
+                        </div>
+
+                        <div className="action-buttons">
+                          <button
+                            className="btn btn-secondary"
+                            onClick={resetImport}
+                          >
+                            ← Recommencer
+                          </button>
+                        </div>
+                      </s-stack>
+                    ) : null}
                   </s-box>
                 </s-card>
               </s-layout-section>
